@@ -16,8 +16,12 @@ def load(level_dir: str | Path, module: str) -> ModuleType:
     path = Path(level_dir) / which / f"{module}.py"
     if not path.exists():
         raise FileNotFoundError(f"{path} (BBM_IMPL={which!r})")
-    spec = importlib.util.spec_from_file_location(f"{which}_{module}", path)
+    import sys
+
+    name = f"{which}_{module}"
+    spec = importlib.util.spec_from_file_location(name, path)
     assert spec and spec.loader
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod  # so @dataclass et al. can resolve the module
     spec.loader.exec_module(mod)
     return mod
