@@ -9,15 +9,15 @@ authors = [{ name = "Pradyoth P.", email = "pradyoth0@gmail.com" }]
 dependencies = []
 
 [project.optional-dependencies]
-# Level 1 is pure standard library. Levels 2+ need these (CPU-only torch wheel).
-levels = ["numpy>=1.26", "torch>=2.2"]
+# Level 2 needs numpy (bundled into dev so CI runs it). Level 3+ adds torch.
+neural = ["torch>=2.2"]
 # Optional secure paid-provider layer (benign enrichment only — see docs/THREAT-MODEL.md).
 providers = ["python-dotenv>=1.0", "keyring>=25"]
-dev = ["pytest>=8", "ruff>=0.5"]
+dev = ["pytest>=8", "ruff>=0.5", "numpy>=1.26"]
 
 [tool.pytest.ini_options]
 testpaths = ["levels", "tests"]
-addopts = "-q"
+addopts = "-q --import-mode=importlib"
 
 [tool.ruff]
 line-length = 100
