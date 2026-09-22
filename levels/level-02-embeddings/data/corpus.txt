@@ -1,0 +1,12 @@
+neural networks learn by adjusting weights using gradient descent on a loss.
+transformers use attention to relate every token to every other token.
+a tokenizer splits text into subword units before a model reads it.
+diffusion models generate images by gradually denoising random noise.
+dogs are loyal animals that enjoy walks and playing fetch in the park.
+the recipe calls for flour, butter, sugar, and two large eggs.
+mount everest is the tallest mountain above sea level on earth.
+photosynthesis lets plants convert sunlight into chemical energy.
+the stock market rose today as investors reacted to earnings reports.
+rain is expected tomorrow with strong winds and cooler temperatures.
+coffee contains caffeine which is a mild stimulant for the brain.
+the ocean covers most of the planet and holds vast amounts of water.
