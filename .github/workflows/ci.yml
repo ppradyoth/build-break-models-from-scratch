@@ -15,4 +15,11 @@ jobs:
         run: BBM_IMPL=solution pytest -q
       - name: starters keep their gaps (pedagogy stays honest)
         run: |
-          ! grep -rL "NotImplementedError" levels/*/starter/*.py
+          bad=0
+          for f in levels/*/starter/*.py; do
+            if ! grep -q "NotImplementedError" "$f"; then
+              echo "::error::starter is missing its gaps: $f"
+              bad=1
+            fi
+          done
+          exit $bad
