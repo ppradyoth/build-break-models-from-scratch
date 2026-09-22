@@ -59,9 +59,10 @@ def craft_bypass(tok: "BPETokenizer", banned_word: str) -> list[int]:
 
 
 def find_undertrained_tokens(
-    tok: "BPETokenizer", corpus: str, threshold: int = 0
+    tok: "BPETokenizer", corpus: str, threshold: int = 1
 ) -> list[int]:
-    """Return vocab ids whose frequency in `corpus` is <= threshold - the
-    tokenizer-side signature of a glitch token.
+    """Return MERGED vocab ids (id >= 256) that occur <= threshold times in
+    `corpus` - the tokenizer-side signature of a glitch token. (Base bytes are
+    always reachable, so the interesting tail is the rare merges.)
     """
     raise NotImplementedError("implement find_undertrained_tokens()")

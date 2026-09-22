@@ -78,13 +78,15 @@ def craft_bypass(tok: "BPETokenizer", banned_word: str) -> list[int]:
 
 
 def find_undertrained_tokens(
-    tok: "BPETokenizer", corpus: str, threshold: int = 0
+    tok: "BPETokenizer", corpus: str, threshold: int = 1
 ) -> list[int]:
-    """Vocab ids whose frequency in `corpus` is <= threshold.
+    """Merged vocab tokens (id >= 256) that occur <= threshold times in `corpus`.
 
-    This is the tokenizer-side signature of "glitch" tokens: a token that lives
-    in the vocab but is (near) absent from the data the model sees. Cf. Fishing
-    for Magikarp (Land & Bartolo, 2024).
+    The tokenizer-side signature of a glitch token: a symbol that made it into the
+    vocabulary yet is (almost) absent from the data the model actually sees. We look
+    at merged tokens only - base bytes are always reachable - which is the real
+    Magikarp tail (cf. Land & Bartolo, 2024), not just "chars missing from a short
+    string."
     """
     counts = Counter(tok.encode(corpus))
-    return sorted(i for i in tok.vocab if counts.get(i, 0) <= threshold)
+    return sorted(i for i in tok.vocab if i >= 256 and counts.get(i, 0) <= threshold)
