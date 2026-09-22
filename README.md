@@ -1,5 +1,7 @@
 # Build & Break Models From Scratch
 
+[![CI](https://github.com/ppradyoth/build-break-models-from-scratch/actions/workflows/ci.yml/badge.svg)](https://github.com/ppradyoth/build-break-models-from-scratch/actions/workflows/ci.yml) &nbsp;![python](https://img.shields.io/badge/python-3.11%2B-blue) &nbsp;![license](https://img.shields.io/badge/license-MIT-green)
+
 *A speedrun through how AI models actually work — by building each piece yourself, then breaking it.*
 
 Most people fall into one of two camps. You can attack models but can't explain what's happening
