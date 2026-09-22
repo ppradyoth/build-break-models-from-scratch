@@ -42,8 +42,12 @@ make check LEVEL=01     # run the tests against YOUR code (fails until you fill 
 make solve  LEVEL=01    # see the reference solution pass
 ```
 
-Level 1 is pure standard-library Python — no dependencies, no GPU, no API keys. Later levels use a
-CPU-only PyTorch to build a tiny GPT you can train on a laptop in minutes.
+Level 1 is pure standard-library Python; Level 2 adds numpy. Level 3 builds a tiny GPT, so it needs
+a CPU-only PyTorch you can train on a laptop in minutes:
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
 
 ## The map
 
@@ -57,7 +61,7 @@ CPU-only PyTorch to build a tiny GPT you can train on a laptop in minutes.
 | 4 | sampling / decoding | flip a refusal by turning your own decoding knobs | Huang et al. 2023 |
 | 5 | install a refusal (fine-tune) | find the refusal direction, ablate it, watch refusals vanish | Arditi et al. 2024 |
 
-Levels 1–2 are live; 3–5 are on the way. **Diffusion World** and other model families come later —
+Levels 1–3 are live; 4–5 are on the way. **Diffusion World** and other model families come later —
 the whole thing is model-agnostic by design.
 
 > **Not a black box, on purpose.** Every attack targets a local toy model shipped in this repo.
