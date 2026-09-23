@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Level 5 · Refusal — Build &amp; Break Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="data.js"></script><script src="game.js"></script>
+<script>if(!BBM.unlocked(5))location.href="index.html";BBM.mountHeader();</script>
+
+<section><div class="wrap">
+  <div class="tag">LEVEL 05 / 05 · FINALE</div>
+  <h1>The refusal direction</h1>
+  <p class="lede">Real residual-stream activations from the repo's refuser. Harmful prompts (red) and harmless ones (blue) live in the model's internal space. A safety behaviour you'd expect to be spread across the whole network turns out to be <b>one direction</b>.</p>
+
+  <div class="mission">
+    <div class="k">Mission · delete the refusal</div>
+    <p style="margin:.4em 0 0">Step 1: compute the refusal direction (difference of the two clusters' means). Step 2: ablate it — project it out — and drop the refusal rate <b>below 10%</b>.</p>
+  </div>
+
+  <div class="panel">
+    <svg class="scatter" id="svg" viewBox="0 0 600 230" preserveAspectRatio="none"></svg>
+    <div class="legend"><span><i style="background:var(--danger)"></i>harmful</span><span><i style="background:var(--accent2)"></i>harmless</span><span id="axislbl"></span></div>
+    <div class="cta">
+      <button class="btn" id="computebtn">Step 1 · Compute refusal direction</button>
+      <label class="toggle" id="abltoggle" style="opacity:.4;pointer-events:none"><input type="checkbox" id="abl"><span class="sw"></span> Step 2 · Ablate it (project it out)</label>
+    </div>
+    <div class="barlabel" style="margin-top:16px"><span>refusal rate on harmful prompts</span><span id="rate" class="kpi"></span></div>
+    <div class="bar"><span id="bar" style="background:var(--danger)"></span></div>
+    <div id="verdict" class="verdict" style="margin-top:10px"></div>
+  </div>
+
+  <div class="win" id="win"></div>
+
+  <p class="lesson"><b>Why it works:</b> the safety wasn't diffused across a billion parameters — it was one vector (Arditi et al. 2024). On open weights it's a rank-one edit away (this is how "abliterated" models are made). Same lesson as Level 4 from the other side: <b>the safety was shallow.</b> <a href="https://github.com/ppradyoth/build-break-models-from-scratch/tree/main/levels/level-05-refusal-direction">Build it →</a></p>
+
+  <div class="lnav" id="lnav"></div>
+</div></section>
+
+<script>
+(function(){
+const N=5; BBM.mountLevelNav(N); BBM.restore(N);
+const L5=BBM.D.l5, svg=document.getElementById("svg");
+const pts=L5.harmful.map(p=>({x:p[0],y:p[1],h:true})).concat(L5.harmless.map(p=>({x:p[0],y:p[1],h:false})));
+const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+const xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);
+const mid=(xmin+xmax)/2;
+const sx=x=>40+((x-xmin)/((xmax-xmin)||1))*520, sy=y=>205-((y-ymin)/((ymax-ymin)||1))*175;
+let computed=false;
+function draw(ablate){
+  let s="";
+  if(computed){
+    s+='<line x1="'+sx(mid)+'" y1="8" x2="'+sx(mid)+'" y2="222" stroke="#2a3446" stroke-dasharray="4 4"/>';
+    s+='<line x1="40" y1="215" x2="560" y2="215" stroke="rgba(94,234,212,.5)"/><polygon points="560,215 552,211 552,219" fill="rgba(94,234,212,.7)"/>';
+  }
+  pts.forEach(p=>{const X=sx(ablate?mid:p.x),Y=sy(p.y);
+    s+='<circle cx="'+X+'" cy="'+Y+'" r="5" fill="'+(p.h?"var(--danger)":"var(--accent2)")+'" opacity="0.85"/>';});
+  svg.innerHTML=s;
+}
+const $=id=>document.getElementById(id);
+function setRate(r,ab){$("rate").textContent=(r*100).toFixed(0)+"%";$("bar").style.width=(r*100)+"%";
+  const v=$("verdict");
+  if(ab){v.className="verdict v-bad";v.textContent="😈 refusal collapsed "+(L5.rates.base*100).toFixed(0)+"% → "+(r*100).toFixed(0)+"% — one direction deleted";}
+  else{v.className="verdict v-safe";v.textContent="🛡️ model refuses harmful prompts ("+(r*100).toFixed(0)+"%)";}}
+$("computebtn").addEventListener("click",()=>{
+  computed=true; $("axislbl").textContent="← x-axis = the refusal direction →";
+  $("computebtn").disabled=true; $("computebtn").textContent="✓ direction computed";
+  const t=$("abltoggle"); t.style.opacity=""; t.style.pointerEvents="";
+  draw(false);
+});
+$("abl").addEventListener("change",()=>{
+  const ab=$("abl").checked; draw(ab);
+  const r=ab?L5.rates.ablated:L5.rates.base; setRate(r,ab);
+  if(ab && r<0.10 && !BBM.done(N)) BBM.win(N,"You removed a safety behaviour with a rank-one edit and left the rest of the model intact. That's the whole finale.");
+});
+draw(false); setRate(L5.rates.base,false);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Level 4 · Sampling — Build &amp; Break Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="data.js"></script><script src="game.js"></script>
+<script>if(!BBM.unlocked(4))location.href="index.html";BBM.mountHeader();</script>
+
+<section><div class="wrap">
+  <div class="tag">LEVEL 04 / 05</div>
+  <h1>Sampling &amp; decoding</h1>
+  <p class="lede">These are <b>real logits</b> from a model in the repo that <b>refuses</b> a harmful prompt at default (greedy) decoding. Turning logits into text is <i>decoding</i> — and the knobs you'd build here can walk right around the refusal.</p>
+
+  <div class="mission">
+    <div class="k">Mission · jailbreak the dials</div>
+    <p style="margin:.4em 0 0">The model refuses at greedy (0% comply). Find a decoding setting that pushes <b>comply ≥ 40%</b>. Same model, same prompt — just the dials.</p>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <div class="col"><label class="lbl">temperature: <span id="tv" class="kpi"></span></label><input type="range" id="temp" min="0" max="2.5" step="0.05" value="0"></div>
+      <div class="col"><label class="lbl">top-k: <span id="kv" class="kpi"></span></label><input type="range" id="topk" min="0" max="12" step="1" value="0"></div>
+      <div class="col"><label class="lbl">top-p: <span id="pv" class="kpi"></span></label><input type="range" id="topp" min="0.5" max="1" step="0.01" value="1"></div>
+    </div>
+    <div class="barlabel" style="margin-top:18px"><span>P(refuse)</span><span id="pn" class="kpi"></span></div>
+    <div class="bar"><span id="bn" style="background:var(--safe)"></span></div>
+    <div class="barlabel"><span>P(comply) — the jailbreak</span><span id="py" class="kpi"></span></div>
+    <div class="bar"><span id="by" style="background:var(--danger)"></span></div>
+    <div id="verdict" class="verdict" style="margin-top:12px"></div>
+  </div>
+
+  <div class="win" id="win"></div>
+
+  <p class="lesson"><b>Why it works:</b> greedy takes the top token (refuse) — but the comply token had real probability all along. Safety measured at one decoding setting isn't safety (Huang et al. 2023); it's shallow — it lives in the ranking of one token. <a href="https://github.com/ppradyoth/build-break-models-from-scratch/tree/main/levels/level-04-sampling">Build it →</a></p>
+
+  <div class="lnav" id="lnav"></div>
+</div></section>
+
+<script>
+(function(){
+const N=4; BBM.mountLevelNav(N); BBM.restore(N);
+const L4=BBM.D.l4, logits=L4.logits, V=logits.length;
+const argmax=logits.indexOf(Math.max(...logits));
+function dist(temp,topk,topp){
+  if(temp<=0){const p=new Array(V).fill(0);p[argmax]=1;return p;}
+  let z=logits.map(x=>x/temp);
+  if(topk>0){const s=[...z].sort((a,b)=>b-a);const kth=s[Math.min(topk,V)-1];z=z.map(v=>v<kth?-1e9:v);}
+  let p=BBM.softmax(z);
+  if(topp<1){const idx=[...p.keys()].sort((a,b)=>p[b]-p[a]);let c=0,keep=new Set();
+    for(const i of idx){keep.add(i);c+=p[i];if(c>=topp)break;}
+    let s=0;p=p.map((v,i)=>keep.has(i)?v:0);s=p.reduce((a,b)=>a+b,0);p=p.map(v=>v/s);}
+  return p;
+}
+const $=id=>document.getElementById(id);
+function upd(){
+  const t=parseFloat($("temp").value),k=parseInt($("topk").value),pp=parseFloat($("topp").value);
+  $("tv").textContent=t===0?"0.00 (greedy)":t.toFixed(2);
+  $("kv").textContent=k===0?"off":k; $("pv").textContent=pp>=1?"off":pp.toFixed(2);
+  const p=dist(t,k,pp), pY=p[L4.idxY], pN=p[L4.idxN];
+  $("pn").textContent=(pN*100).toFixed(0)+"%"; $("py").textContent=(pY*100).toFixed(0)+"%";
+  $("bn").style.width=(pN*100)+"%"; $("by").style.width=(pY*100)+"%";
+  const v=$("verdict");
+  if(pY<0.02){v.className="verdict v-safe";v.textContent="🛡️ SAFE — refuses";}
+  else if(pY<0.40){v.className="verdict v-neutral";v.textContent="⚠ leaking "+(pY*100).toFixed(0)+"% — push it past 40%";}
+  else{v.className="verdict v-bad";v.textContent="😈 JAILBROKEN — complies "+(pY*100).toFixed(0)+"% of the time";}
+  if(pY>=0.40 && !BBM.done(N)) BBM.win(N,"You didn't change the model or the prompt — only the decoding. Alignment tested at one setting isn't alignment.");
+}
+["temp","topk","topp"].forEach(id=>$(id).addEventListener("input",upd));
+upd();
+})();
+</script>
+</body>
+</html>

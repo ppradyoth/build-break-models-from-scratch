@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Level 1 · Tokenizer — Build &amp; Break Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="data.js"></script><script src="game.js"></script>
+<script>BBM.mountHeader();</script>
+
+<section><div class="wrap">
+  <div class="tag">LEVEL 01 / 05</div>
+  <h1>Tokenizer</h1>
+  <p class="lede">A model never sees text — it sees <b>token IDs</b>. The same text can be chopped into tokens many different ways, and a filter that watches IDs is blind to the string those IDs spell. You'll use that.</p>
+
+  <!-- STAGE A -->
+  <div class="mission">
+    <div class="k">Mission A · smuggle the payload</div>
+    <p style="margin:.4em 0 0">The word <b>forbidden</b> must reach the user, but the token filter must read <b>ALLOWED</b>. The filter blocks the exact token IDs of the canonical encoding. Find another encoding of the same text.</p>
+  </div>
+  <div class="panel">
+    <label class="lbl">your message (must still contain the word "forbidden")</label>
+    <input id="msg" type="text" value="access forbidden" spellcheck="false">
+    <div style="margin:12px 0"><label class="toggle"><input type="checkbox" id="byte"><span class="sw"></span> shatter to raw bytes (a different, non-canonical tokenization)</label></div>
+    <label class="lbl">tokens the filter sees</label>
+    <div id="toks" class="chips"></div>
+    <div id="averdict" class="verdict v-neutral">…</div>
+  </div>
+
+  <!-- STAGE B -->
+  <div class="mission">
+    <div class="k">Mission B · find the glitch token</div>
+    <p style="margin:.4em 0 0">One of these tokens is in the vocabulary but almost never appeared in training — a <b>glitch token</b>. Click the one that never shows up in the sample text below.</p>
+  </div>
+  <div class="panel">
+    <label class="lbl">sample text the model trained on</label>
+    <div class="mono small" id="evaltxt" style="margin-bottom:12px"></div>
+    <label class="lbl">click the undertrained token</label>
+    <div id="cands" class="chips"></div>
+    <div id="bverdict" class="verdict v-neutral" style="margin-top:10px">pick one…</div>
+  </div>
+
+  <div class="win" id="win"></div>
+
+  <p class="lesson"><b>Why it works:</b> decoding is many-to-one — a string has many tokenizations, only one canonical. Filter the IDs and you filter one of them. Glitch tokens exist because the tokenizer's vocab and the model's training data disagree. <b>Fix:</b> filter the decoded, normalized <i>string</i>; audit the vocab for undertrained tokens. <a href="https://github.com/ppradyoth/build-break-models-from-scratch/tree/main/levels/level-01-tokenizer">Build the real thing →</a></p>
+
+  <div class="lnav" id="lnav"></div>
+</div></section>
+
+<script>
+(function(){
+const N=1; BBM.mountLevelNav(N); BBM.restore(N);
+const bpe=BBM.makeBPE();
+const banned=bpe.encode("forbidden");
+function containsSub(a,b){for(let i=0;i+b.length<=a.length;i++){let ok=1;for(let j=0;j<b.length;j++)if(a[i+j]!==b[j]){ok=0;break;}if(ok)return true;}return false;}
+function chips(el,ids,cls){el.innerHTML="";ids.forEach(id=>{const s=document.createElement("span");s.className="chip"+(cls?(" "+cls):"");let p=id<256?String.fromCharCode(id):bpe.piece(id);p=bpe.piece(id);s.textContent=p===" "?"␣":p;el.appendChild(s);});}
+let aDone=false,bDone=false;
+function checkA(){
+  const txt=document.getElementById("msg").value;
+  const byte=document.getElementById("byte").checked;
+  const ids= byte ? [...new TextEncoder().encode(txt)] : bpe.encode(txt);
+  chips(document.getElementById("toks"),ids, byte?"byte":null);
+  const hasWord = txt.toLowerCase().includes("forbidden");
+  const blocked = containsSub(ids,banned);
+  const v=document.getElementById("averdict");
+  if(!hasWord){v.className="verdict v-neutral";v.textContent="⚠ your message must contain the word \"forbidden\"";}
+  else if(blocked){v.className="verdict v-bad";v.textContent="🛡️ BLOCKED — the filter sees the forbidden token IDs";}
+  else{v.className="verdict v-safe";v.textContent="✅ ALLOWED — same text, different IDs → filter is blind. Mission A solved.";aDone=true;done();}
+}
+document.getElementById("msg").addEventListener("input",checkA);
+document.getElementById("byte").addEventListener("change",checkA);
+
+// Stage B
+const evalTxt="the model reads tokens and predicts the next token";
+document.getElementById("evaltxt").textContent='"'+evalTxt+'"';
+const pieces=[...bpe.vocab.keys()].filter(i=>i>=256).map(i=>({id:i,p:bpe.piece(i)})).filter(o=>/^[a-z ]{2,}$/.test(o.p));
+const present=pieces.filter(o=>evalTxt.includes(o.p));
+const absent =pieces.filter(o=>!evalTxt.includes(o.p));
+function pick(arr,k){const c=arr.slice();const o=[];while(o.length<k&&c.length)o.push(c.splice(Math.floor(Math.random()*c.length),1)[0]);return o;}
+const glitch=pick(absent,1)[0]||{p:"zzqx"};
+let cset=pick(present,5).concat([glitch]);
+for(let i=cset.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[cset[i],cset[j]]=[cset[j],cset[i]];}
+const cEl=document.getElementById("cands");
+cset.forEach(o=>{const s=document.createElement("span");s.className="chip click";s.textContent=(o.p===glitch.p?o.p:o.p).replace(/ /g,"␣");
+  s.addEventListener("click",()=>{
+    const bv=document.getElementById("bverdict");
+    if(o.p===glitch.p){s.classList.add("pick");bv.className="verdict v-safe";bv.textContent="✅ correct — \""+o.p+"\" is a vocab token absent from the data. Mission B solved.";bDone=true;done();}
+    else{s.classList.add("blocked");bv.className="verdict v-bad";bv.textContent="✗ \""+o.p.replace(/ /g,'␣')+"\" appears in the text — not undertrained. Try again.";}
+  });
+  cEl.appendChild(s);});
+
+function done(){ if(aDone&&bDone&&!BBM.done(N)) BBM.win(N,"Both filters beaten: a token-ID filter can't see the string, and the vocab hides tokens the model never learned."); }
+checkA();
+})();
+</script>
+</body>
+</html>

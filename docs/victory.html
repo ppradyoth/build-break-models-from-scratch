@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cleared · Build &amp; Break Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="data.js"></script><script src="game.js"></script>
+<script>BBM.mountHeader();</script>
+
+<section style="padding-top:52px"><div class="wrap">
+  <div class="tag" id="tag"></div>
+  <h1 id="title"></h1>
+  <p class="sub" id="sub"></p>
+
+  <div class="panel">
+    <label class="lbl">flags captured</label>
+    <div id="flags" class="plist"></div>
+  </div>
+
+  <div class="panel">
+    <h3>You just did the whole model stack</h3>
+    <p class="small">You bypassed a tokenizer filter, poisoned a retriever, injected through untrusted data, jailbroke a refusal with the decoding dials, and deleted a refusal direction — every one a real published attack. Two threads ran through it: <b>filtering at the wrong layer fails</b>, and <b>safety is shallow</b>.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/ppradyoth/build-break-models-from-scratch">Now build it for real →</a>
+      <button class="btn ghost" id="share">Copy a share message</button>
+      <a class="btn ghost" href="index.html">Replay</a>
+    </div>
+    <div id="shared" class="small" style="margin-top:10px"></div>
+  </div>
+
+  <p class="small">The site is the hook. In the repo you write the tokenizer, the attention, the sampler and the ablation yourself — with tests that go green when your attack lands. MIT · <a href="https://github.com/ppradyoth">@ppradyoth</a></p>
+</div></section>
+
+<script>
+(function(){
+const done=BBM.count(), all=done===5;
+document.getElementById("tag").textContent = all ? "// all five layers broken" : "// "+done+"/5 so far";
+document.getElementById("title").innerHTML = all ? '<span class="g">Model stack: cleared.</span>' : "Keep going.";
+document.getElementById("sub").textContent = all
+  ? "You built a tiny model in your head and broke every layer of it. Here's your run:"
+  : "You've captured "+done+" of 5 flags. Finish the rest from the menu.";
+const fl=document.getElementById("flags");
+BBM.LEVELS.forEach(L=>{const d=BBM.done(L.n);const row=document.createElement("div");row.className="prow";
+  row.innerHTML='<div class="txt">'+(d?'<span class="flag">FLAG{'+L.flag+'}</span>':'<span class="muted">Level '+L.n+' — '+L.title+' (not captured)</span>')+'</div>'+
+  '<div class="sc">'+(d?"✅":'<a href="level-'+L.n+'.html">play</a>')+'</div>';fl.appendChild(row);});
+document.getElementById("share").addEventListener("click",()=>{
+  const txt="I built a tiny AI model from scratch and broke every layer of it — tokenizer, embeddings, attention, sampling, and the refusal direction. Play it (no clone): https://ppradyoth.github.io/build-break-models-from-scratch/";
+  try{navigator.clipboard.writeText(txt);document.getElementById("shared").textContent="Copied to clipboard ✓";}
+  catch(e){document.getElementById("shared").textContent=txt;}
+});
+})();
+</script>
+</body>
+</html>

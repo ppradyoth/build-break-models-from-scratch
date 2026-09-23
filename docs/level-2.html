@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Level 2 · Embeddings — Build &amp; Break Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="data.js"></script><script src="game.js"></script>
+<script>if(!BBM.unlocked(2))location.href="index.html";BBM.mountHeader();</script>
+
+<section><div class="wrap">
+  <div class="tag">LEVEL 02 / 05</div>
+  <h1>Embeddings &amp; retrieval</h1>
+  <p class="lede">Search embeds your query and your documents into vectors, then returns the ones whose vectors sit <b>nearest</b> the query. Similarity stands in for relevance — so if you can move a passage <i>next to</i> the query in that space, you own the top result.</p>
+
+  <div class="mission">
+    <div class="k">Mission · hijack the #1 result</div>
+    <p style="margin:.4em 0 0">Build a passage from the word bank that ranks <b>#1</b> for the query and reaches cosine <b>≥ 0.60</b> — without being about the query's actual answer.</p>
+  </div>
+
+  <div class="panel">
+    <div class="barlabel"><span>query: "<span id="q" class="mono"></span>"</span><span>your passage similarity: <span id="simv" class="kpi">0.000</span></span></div>
+    <div class="bar"><span id="simbar" style="background:var(--danger);width:0%"></span></div>
+
+    <label class="lbl" style="margin-top:16px">your passage (click to remove a word)</label>
+    <div id="mine" class="chips" style="min-height:34px"></div>
+
+    <label class="lbl" style="margin-top:14px">word bank (click to add)</label>
+    <div id="bank" class="chips"></div>
+
+    <div class="cta">
+      <button class="btn ghost" id="clear">Clear</button>
+      <button class="btn" id="auto">🤖 Auto-solve with HotFlip</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <label class="lbl">live ranking (your passage vs the real corpus)</label>
+    <div id="rank" class="plist"></div>
+  </div>
+
+  <div class="win" id="win"></div>
+
+  <p class="lesson"><b>Why it works:</b> cosine similarity is a proxy an attacker with the embeddings can drive. Your passage isn't <i>about</i> the query — it just sits next to it. Real corpus-poisoning (Zhong et al. 2023) does exactly this with gradients (HotFlip). <b>Fix:</b> never treat retrieval rank as trust. <a href="https://github.com/ppradyoth/build-break-models-from-scratch/tree/main/levels/level-02-embeddings">Build it →</a></p>
+
+  <div class="lnav" id="lnav"></div>
+</div></section>
+
+<script>
+(function(){
+const N=2; BBM.mountLevelNav(N); BBM.restore(N);
+const L2=BBM.D.l2; const q=L2.query; document.getElementById("q").textContent=q;
+const qvec=BBM.embed(q);
+const bankWords=["neural","networks","learn","gradient","descent","weights","adjusting","attention",
+  "tokens","transformers","recipe","ocean","mountain","coffee","dogs","rain"].filter(w=>BBM.widx[w]!==undefined);
+let mine=[];
+
+function passageVec(){return mine.length?BBM.meanVec(mine.map(w=>BBM.widx[w])):new Array(BBM.l2dim).fill(0);}
+function render(){
+  const bk=document.getElementById("bank");bk.innerHTML="";
+  bankWords.forEach(w=>{const s=document.createElement("span");s.className="chip click";s.textContent=w;
+    s.addEventListener("click",()=>{mine.push(w);render();});bk.appendChild(s);});
+  const me=document.getElementById("mine");me.innerHTML="";
+  mine.forEach((w,i)=>{const s=document.createElement("span");s.className="chip click pick";s.textContent=w+" ✕";
+    s.addEventListener("click",()=>{mine.splice(i,1);render();});me.appendChild(s);});
+
+  const pv=passageVec(), sim=mine.length?BBM.cos(pv,qvec):0;
+  document.getElementById("simv").textContent=sim.toFixed(3);
+  document.getElementById("simbar").style.width=Math.max(0,Math.min(1,sim))*100+"%";
+
+  // ranking vs corpus
+  const items=L2.passages.map(p=>({t:p,s:BBM.cos(BBM.embed(p),qvec),mine:false}));
+  if(mine.length) items.push({t:mine.join(" ")+"  ⟵ yours",s:sim,mine:true});
+  items.sort((a,b)=>b.s-a.s);
+  const rankOfMine=items.findIndex(x=>x.mine)+1;
+  const rk=document.getElementById("rank");rk.innerHTML="";
+  items.slice(0,6).forEach(it=>{const d=document.createElement("div");d.className="prow"+(it.mine?" win":"");
+    d.innerHTML='<div class="txt">'+it.t.replace(/</g,"&lt;")+'</div><div class="sc">'+it.s.toFixed(3)+'</div>';rk.appendChild(d);});
+
+  if(mine.length>=2 && rankOfMine===1 && sim>=0.60 && !BBM.done(N)){
+    BBM.win(N,"Your irrelevant passage sits closer to the query than the real answer — you own the ranking.");
+  }
+}
+document.getElementById("clear").addEventListener("click",()=>{mine=[];render();});
+document.getElementById("auto").addEventListener("click",()=>{
+  const r=BBM.hotflip(qvec,6,40); mine=r.words; render();
+});
+render();
+})();
+</script>
+</body>
+</html>
