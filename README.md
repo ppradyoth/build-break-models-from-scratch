@@ -61,7 +61,7 @@ pip install torch --index-url https://download.pytorch.org/whl/cpu
 | 4 | sampling / decoding | flip a refusal by turning your own decoding knobs | Huang et al. 2023 |
 | 5 | install a refusal (fine-tune) | find the refusal direction, ablate it, watch refusals vanish | Arditi et al. 2024 |
 
-Levels 1–3 are live; 4–5 are on the way. **Diffusion World** and other model families come later —
+Levels 1–4 are live; 5 (the finale) is on the way. **Diffusion World** and other model families come later —
 the whole thing is model-agnostic by design.
 
 > **Not a black box, on purpose.** Every attack targets a local toy model shipped in this repo.

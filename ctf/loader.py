@@ -11,8 +11,8 @@ from pathlib import Path
 from types import ModuleType
 
 
-def load(level_dir: str | Path, module: str) -> ModuleType:
-    which = os.environ.get("BBM_IMPL", "solution")
+def load(level_dir: str | Path, module: str, which: str | None = None) -> ModuleType:
+    which = which or os.environ.get("BBM_IMPL", "solution")
     path = Path(level_dir) / which / f"{module}.py"
     if not path.exists():
         raise FileNotFoundError(f"{path} (BBM_IMPL={which!r})")
