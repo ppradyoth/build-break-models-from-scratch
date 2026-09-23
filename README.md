@@ -4,6 +4,9 @@
 
 *A speedrun through how AI models actually work — by building each piece yourself, then breaking it.*
 
+### ▶ [Play it in your browser](https://ppradyoth.github.io/build-break-models-from-scratch/) — no clone needed
+All five levels are interactive on the site: bypass a tokenizer filter, poison a retriever, flip a real model's refusal with a temperature slider, and delete its refusal direction with one toggle.
+
 Most people fall into one of two camps. You can attack models but can't explain what's happening
 inside them, or you can implement attention from memory but have never thought about how your system
 gets attacked. This repo is the bridge. Every level, you **build one component of the model stack
